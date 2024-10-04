@@ -6,6 +6,8 @@ import { Image } from 'expo-image'
 import { Track, useActiveTrack, useIsPlaying } from 'react-native-track-player'
 import { Entypo, Ionicons } from '@expo/vector-icons'
 import LoaderKit from 'react-native-loader-kit'
+import { TrackShortcutsMenu } from './TrackShortcutsMenu'
+import { StopPropagation } from './utils/StopPropagation'
 
 export type TrackListItemProps = {
 	track: Track
@@ -72,7 +74,12 @@ export const TrackListItem = ({ track, onTrackSelect: handleTrackSelect }: Track
 						)}
 					</View>
 
-					<Entypo name="dots-three-horizontal" color={colors.textMuted} size={18} />
+					{/* Native menu */}
+					<StopPropagation>
+						<TrackShortcutsMenu track={track}>
+							<Entypo name="dots-three-horizontal" color={colors.textMuted} size={20} />
+						</TrackShortcutsMenu>
+					</StopPropagation>
 				</View>
 			</View>
 		</TouchableHighlight>

@@ -13,6 +13,7 @@ import { PlayerProgressBar } from '@/components/PlayerProgressBar'
 import { PlayerVolumeBar } from '@/components/PlayerVolumeBar'
 import { LinearGradient } from 'expo-linear-gradient'
 import { usePlayerBackground } from '@/hooks/usePlayerBackground'
+import { useTrackPlayerFavorite } from '@/hooks/useTrackPlayerFavorite'
 
 const PlayerScreen = () => {
 	const activeTrack = useActiveTrack()
@@ -20,8 +21,7 @@ const PlayerScreen = () => {
 	const { top, bottom } = useSafeAreaInsets()
 	const { imageColors } = usePlayerBackground(activeTrack?.artwork ?? unknownTrackImageUri)
 
-	const isFavorite = false
-	const toggleFavorite = () => {}
+	const { isFavorite, toggleFavorite } = useTrackPlayerFavorite()
 
 	if (!activeTrack) {
 		return (
