@@ -4,34 +4,78 @@ import { utilsStyles } from '../styles/index'
 import TrackPlayer, { Track } from 'react-native-track-player'
 import { Image } from 'expo-image'
 import { unknownTrackImageUri } from '@/constants/images'
+import { useQueue } from '@/store/queue'
+import { useRef } from 'react'
+import { QueueControls } from './QueueControls'
 
 export type TrackListProps = Partial<FlatListProps<Track>> & {
+	id: string
 	tracks: any[]
+	hideQueueControls?: boolean
 }
 
 const ItemDivider = () => (
 	<View style={{ ...utilsStyles.itemSeparator, marginVertical: 9, marginLeft: 60 }} />
 )
 
-export const TracksList = ({ tracks, ...flatlistProps }: TrackListProps) => {
-	const handleTrackSelect = async (track: Track) => {
-		await TrackPlayer.load(track)
-		await TrackPlayer.play()
+export const TracksList = ({
+	id,
+	hideQueueControls = false,
+	tracks,
+	...flatlistProps
+}: TrackListProps) => {
+	const queueOffset = useRef(0)
+	const { activeQueueID, setActiveQueueID } = useQueue()
+
+	const handleTrackSelect = async (selectedTrack: Track) => {
+		const trackIndex = tracks.findIndex((track) => track.url === selectedTrack.url)
+
+		if (trackIndex === -1) return
+
+		const isChangingQueue = activeQueueID !== id
+
+		if (isChangingQueue) {
+			const beforeTracks = tracks.slice(0, trackIndex)
+			const afterTracks = tracks.slice(trackIndex + 1)
+
+			await TrackPlayer.reset()
+
+			// New queue
+			await TrackPlayer.add(selectedTrack)
+			await TrackPlayer.add(afterTracks)
+			await TrackPlayer.add(beforeTracks)
+
+			await TrackPlayer.play()
+
+			queueOffset.current = trackIndex
+			setActiveQueueID(id)
+		} else {
+			const nextTrackIndex =
+				trackIndex - queueOffset.current < 0
+					? tracks.length + trackIndex - queueOffset.current
+					: trackIndex - queueOffset.current
+
+			await TrackPlayer.skip(nextTrackIndex)
+			await TrackPlayer.play()
+		}
 	}
 
 	return (
 		<FlatList
 			data={tracks}
 			contentContainerStyle={{ paddingTop: 10, paddingBottom: 96 }}
+			ListHeaderComponent={
+				!hideQueueControls ? (
+					<QueueControls tracks={tracks} style={{ paddingBottom: 20 }} />
+				) : undefined
+			}
 			ListFooterComponent={tracks.length >= 1 ? ItemDivider : null}
 			ItemSeparatorComponent={ItemDivider}
 			ListEmptyComponent={
 				<View>
 					<Text style={utilsStyles.emptyContentText}>No songs found</Text>
 
-					<Image 
-					source={{uri: unknownTrackImageUri}} style={utilsStyles.emptyContentImage}
-					/>
+					<Image source={{ uri: unknownTrackImageUri }} style={utilsStyles.emptyContentImage} />
 				</View>
 			}
 			renderItem={({ item: track }) => (
